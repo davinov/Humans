@@ -132,3 +132,5 @@ service-account-key.json
 local/
 src/Humans.Web/bin/
 src/**/bin\\Debug/
+src/Humans.Web/node_modules/
+src/Humans.Web/wwwroot/dist/
