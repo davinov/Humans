@@ -2,6 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+# Install Node.js for frontend build
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm && rm -rf /var/lib/apt/lists/*
+
 # Copy project files for restore
 COPY .editorconfig Directory.Build.props Directory.Packages.props ./
 COPY src/Humans.Domain/Humans.Domain.csproj src/Humans.Domain/
@@ -9,11 +12,18 @@ COPY src/Humans.Application/Humans.Application.csproj src/Humans.Application/
 COPY src/Humans.Infrastructure/Humans.Infrastructure.csproj src/Humans.Infrastructure/
 COPY src/Humans.Web/Humans.Web.csproj src/Humans.Web/
 
-# Restore packages
+# Install npm dependencies (separate layer for caching)
+COPY src/Humans.Web/package*.json src/Humans.Web/
+RUN cd src/Humans.Web && npm ci
+
+# Restore .NET packages
 RUN dotnet restore src/Humans.Web/Humans.Web.csproj
 
 # Copy source code
 COPY src/ src/
+
+# Build frontend bundle
+RUN cd src/Humans.Web && npm run build
 
 # Coolify passes SOURCE_COMMIT and MINVER_VERSION as build args; deploy-qa.sh sets them from the host repo
 ARG SOURCE_COMMIT=""
