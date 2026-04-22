@@ -12,20 +12,18 @@ function escHtml(s) {
 
 // --- Popup ---
 
-export function onCampPolygonClick(e) {
-    if (appState.activeCampSeasonId) return;
-    const props = e.features[0].properties;
+function showSingleCampPopup(lngLat, props) {
     const campSeasonId = props.campSeasonId;
     const isOwn = props.campSeasonId === CONFIG.USER_CAMP_SEASON_ID;
     const canEdit = CONFIG.IS_MAP_ADMIN || (CONFIG.IS_PLACEMENT_OPEN && isOwn);
 
-    const area         = props.areaSqm   ? `<div class="text-muted small">${Math.round(props.areaSqm).toLocaleString()} m²</div>` : '';
-    const warning      = props.outsideZone ? `<div class="text-danger small">⚠️ Outside limits</div>` : '';
-    const overlapWarn  = props.overlaps    ? `<div class="text-warning small">⚠️ Overlaps with another barrio</div>` : '';
-    const editBtn      = canEdit ? `<button class="btn btn-primary btn-sm mt-1 js-edit-barrio-btn">Edit</button>` : '';
+    const area        = props.areaSqm    ? `<div class="text-muted small">${Math.round(props.areaSqm).toLocaleString()} m²</div>` : '';
+    const warning     = props.outsideZone ? `<div class="text-danger small">⚠️ Outside limits</div>` : '';
+    const overlapWarn = props.overlaps    ? `<div class="text-warning small">⚠️ Overlaps with another barrio</div>` : '';
+    const editBtn     = canEdit ? `<button class="btn btn-primary btn-sm mt-1 js-edit-barrio-btn">Edit</button>` : '';
 
     if (appState.currentPopup) appState.currentPopup.remove();
-    appState.currentPopup = new maplibregl.Popup().setLngLat(e.lngLat)
+    appState.currentPopup = new maplibregl.Popup().setLngLat(lngLat)
         .setHTML(`<div><strong>${escHtml(props.campName || 'Camp')}</strong></div>${area}${warning}${overlapWarn}${editBtn}`)
         .addTo(appState.map);
 
@@ -33,6 +31,44 @@ export function onCampPolygonClick(e) {
         appState.currentPopup.getElement().querySelector('.js-edit-barrio-btn')
             .addEventListener('click', () => startEditing(campSeasonId));
     }
+}
+
+export function onCampPolygonClick(e) {
+    if (appState.activeCampSeasonId) return;
+
+    const allFeatures = appState.map.queryRenderedFeatures(e.point, {
+        layers: ['camp-polygons-fill', 'camp-polygons-fill-surprise'],
+    });
+    const seen = new Set();
+    const unique = allFeatures.filter(f => {
+        const id = f.properties.campSeasonId;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
+
+    if (unique.length <= 1) {
+        showSingleCampPopup(e.lngLat, unique[0]?.properties ?? e.features[0].properties);
+        return;
+    }
+
+    const items = unique.map(f => {
+        const p = f.properties;
+        const warn = (p.outsideZone || p.overlaps) ? '⚠️ ' : '';
+        return `<div class="js-camp-pick py-1" style="cursor:pointer" data-props="${encodeURIComponent(JSON.stringify(p))}">${warn}${escHtml(p.campName || 'Camp')}</div>`;
+    }).join('<hr class="my-1">');
+
+    if (appState.currentPopup) appState.currentPopup.remove();
+    appState.currentPopup = new maplibregl.Popup().setLngLat(e.lngLat)
+        .setHTML(`<div class="small fw-semibold mb-1">Multiple barrios here:</div>${items}`)
+        .addTo(appState.map);
+
+    appState.currentPopup.getElement().querySelectorAll('.js-camp-pick').forEach(el => {
+        el.addEventListener('click', () => {
+            const props = JSON.parse(decodeURIComponent(el.dataset.props));
+            showSingleCampPopup(e.lngLat, props);
+        });
+    });
 }
 
 // --- Edit mode lifecycle ---
