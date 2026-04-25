@@ -8,6 +8,7 @@ import {
     setEditingControlsVisible, updateAddMyBarrioVisibility,
 } from './edit.js';
 import { initSignalR } from './signalr.js';
+import { initSnap, applySnapToFeature } from './snap.js';
 
 async function init() {
     appState.map = new maplibregl.Map({
@@ -20,13 +21,40 @@ async function init() {
         bounds: CONFIG.MAP_BOUNDS,
     });
 
-    appState.draw = new MapboxDraw({ displayControlsDefault: false, styles: DRAW_STYLES });
+    const snapDrawPolygon = {
+        ...MapboxDraw.modes.draw_polygon,
+        onClick(state, e) {
+            if (appState.snapCandidate) e.lngLat = appState.snapCandidate.lngLat;
+            return MapboxDraw.modes.draw_polygon.onClick.call(this, state, e);
+        },
+    };
+
+    appState.draw = new MapboxDraw({
+        displayControlsDefault: false,
+        styles: DRAW_STYLES,
+        modes: { ...MapboxDraw.modes, draw_polygon: snapDrawPolygon },
+    });
     appState.map.addControl(appState.draw);
 
     appState.map.on('draw.create', onDrawChange);
     appState.map.on('draw.update', onDrawChange);
     appState.map.on('draw.render', onDrawChange);
     appState.map.on('draw.delete', onDrawDelete);
+
+    let _snapApplying = false;
+    function applySnapOnChange() {
+        if (_snapApplying || !appState.activeCampSeasonId) return;
+        const [feature] = appState.draw.getAll().features;
+        if (!feature) return;
+        const snapped = applySnapToFeature(feature, appState.map);
+        if (snapped) {
+            _snapApplying = true;
+            appState.draw.add(snapped);
+            _snapApplying = false;
+        }
+    }
+    appState.map.on('draw.update', applySnapOnChange);
+    appState.map.on('draw.create', applySnapOnChange);
 
     await new Promise(resolve => appState.map.on('load', resolve));
 
@@ -64,6 +92,7 @@ async function init() {
     appState.campMap = await (await fetch('/api/city-planning/state')).json();
     appState.limitZoneGeom = parseLimitZoneGeom(appState.campMap.limitZoneGeoJson);
     renderMap(onCampPolygonClick);
+    initSnap(appState.map);
     updateAddMyBarrioVisibility();
     initSignalR();
 }
