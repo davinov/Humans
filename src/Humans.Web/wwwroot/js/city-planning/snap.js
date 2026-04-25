@@ -20,6 +20,16 @@ function buildSnapTargets() {
             geom.coordinates.forEach((coords, j) => {
                 targets.push({ id: `limit-${i}-${j}`, line: turf.lineString(coords) });
             });
+        } else if (geom.type === 'Polygon') {
+            geom.coordinates.forEach((ring, j) => {
+                targets.push({ id: `limit-${i}-ring-${j}`, line: turf.lineString(ring) });
+            });
+        } else if (geom.type === 'MultiPolygon') {
+            geom.coordinates.forEach((poly, j) => {
+                poly.forEach((ring, k) => {
+                    targets.push({ id: `limit-${i}-${j}-${k}`, line: turf.lineString(ring) });
+                });
+            });
         }
     }
     return targets;

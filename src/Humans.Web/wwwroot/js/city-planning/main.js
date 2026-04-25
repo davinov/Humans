@@ -8,7 +8,7 @@ import {
     setEditingControlsVisible, updateAddMyBarrioVisibility,
 } from './edit.js';
 import { initSignalR } from './signalr.js';
-import { initSnap, applySnapToFeature } from './snap.js';
+import { initSnap, applySnapToFeature, findSnapCandidate } from './snap.js';
 
 async function init() {
     appState.map = new maplibregl.Map({
@@ -29,10 +29,37 @@ async function init() {
         },
     };
 
+    const snapDirectSelect = {
+        ...MapboxDraw.modes.direct_select,
+        onDrag(state, e) {
+            if (appState.snapEnabled && appState.activeCampSeasonId) {
+                const candidate = findSnapCandidate(e.lngLat, appState.map.getZoom());
+                appState.snapCandidate = candidate;
+                const src = appState.map.getSource('snap-indicator');
+                if (src) src.setData(candidate
+                    ? { type: 'FeatureCollection', features: [turf.point([candidate.lngLat.lng, candidate.lngLat.lat])] }
+                    : { type: 'FeatureCollection', features: [] });
+            }
+            return MapboxDraw.modes.direct_select.onDrag.call(this, state, e);
+        },
+        onMouseUp(state, e) {
+            const wasDragging = state.dragMoving;
+            const result = MapboxDraw.modes.direct_select.onMouseUp?.call(this, state, e);
+            if (appState.activeCampSeasonId && wasDragging) {
+                const [feature] = appState.draw.getAll().features;
+                if (feature) {
+                    const snapped = applySnapToFeature(feature, appState.map);
+                    if (snapped) appState.draw.add(snapped);
+                }
+            }
+            return result;
+        },
+    };
+
     appState.draw = new MapboxDraw({
         displayControlsDefault: false,
         styles: DRAW_STYLES,
-        modes: { ...MapboxDraw.modes, draw_polygon: snapDrawPolygon },
+        modes: { ...MapboxDraw.modes, draw_polygon: snapDrawPolygon, direct_select: snapDirectSelect },
     });
     appState.map.addControl(appState.draw);
 
