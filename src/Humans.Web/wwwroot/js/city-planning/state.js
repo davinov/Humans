@@ -9,4 +9,6 @@ export const appState = {
     previewCampSeasonId: null,  // non-null while previewing a historical version
     remoteCursors:     {},
     currentPopup:      null,
+    snapEnabled:       true,   // false while Alt is held
+    snapCandidate:     null,   // { lngLat: {lng, lat}, featureId, line } | null
 };
