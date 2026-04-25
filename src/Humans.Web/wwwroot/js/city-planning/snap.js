@@ -59,3 +59,60 @@ export function findSnapCandidate(lngLat, zoom) {
     }
     return best;
 }
+
+// --- Internal: edge subdivision ---
+
+function sliceAlongBoundary(line, coordA, coordB) {
+    try {
+        const ptA = turf.point(coordA);
+        const ptB = turf.point(coordB);
+        const sliced = turf.lineSlice(ptA, ptB, line);
+        const directDist = turf.distance(ptA, ptB, { units: 'meters' });
+        const slicedLength = turf.length(sliced, { units: 'meters' });
+        // Skip if sliced path is suspiciously long — wrong-direction wrap on a closed ring.
+        if (slicedLength > directDist * 3) return null;
+        return sliced.geometry.coordinates.slice(1, -1); // intermediate points only
+    } catch {
+        return null;
+    }
+}
+
+// --- Public: snap all vertices and subdivide edges ---
+
+export function applySnapToFeature(feature, map) {
+    const ring = feature.geometry.coordinates[0];
+    const n = ring.length - 1; // ring is closed: ring[n] === ring[0]
+    const zoom = map.getZoom();
+    const snappedMap = new Map(); // index → { lngLat, featureId, line }
+    const newRing = [...ring];
+
+    // Phase 1: snap each vertex
+    for (let i = 0; i < n; i++) {
+        const candidate = findSnapCandidate({ lng: ring[i][0], lat: ring[i][1] }, zoom);
+        if (candidate) {
+            newRing[i] = [candidate.lngLat.lng, candidate.lngLat.lat];
+            snappedMap.set(i, candidate);
+        }
+    }
+    newRing[n] = newRing[0]; // keep ring closed
+
+    // Phase 2: edge subdivision for adjacent snapped pairs on the same line
+    const finalRing = [];
+    for (let i = 0; i < n; i++) {
+        finalRing.push(newRing[i]);
+        const j = (i + 1) % n;
+        const snapI = snappedMap.get(i);
+        const snapJ = snappedMap.get(j);
+        if (snapI && snapJ && snapI.featureId === snapJ.featureId) {
+            const midPoints = sliceAlongBoundary(snapI.line, newRing[i], newRing[j]);
+            if (midPoints) finalRing.push(...midPoints);
+        }
+    }
+    finalRing.push(finalRing[0]); // close ring
+
+    const unchanged = finalRing.length === ring.length &&
+        finalRing.every((c, i) => c[0] === ring[i][0] && c[1] === ring[i][1]);
+    if (unchanged) return null;
+
+    return { ...feature, geometry: { ...feature.geometry, coordinates: [finalRing] } };
+}
