@@ -72,6 +72,19 @@ export function findSnapCandidate(lngLat, zoom) {
 
 // --- Internal: edge subdivision ---
 
+function filterByMinDistance(coords, minDistM) {
+    if (!coords.length) return coords;
+    const result = [coords[0]];
+    let prev = coords[0];
+    for (let i = 1; i < coords.length; i++) {
+        if (turf.distance(turf.point(prev), turf.point(coords[i]), { units: 'meters' }) >= minDistM) {
+            result.push(coords[i]);
+            prev = coords[i];
+        }
+    }
+    return result;
+}
+
 function sliceAlongBoundary(line, coordA, coordB) {
     try {
         const ptA = turf.point(coordA);
@@ -81,7 +94,8 @@ function sliceAlongBoundary(line, coordA, coordB) {
         const slicedLength = turf.length(sliced, { units: 'meters' });
         // Skip if sliced path is suspiciously long — wrong-direction wrap on a closed ring.
         if (slicedLength > directDist * 3) return null;
-        return sliced.geometry.coordinates.slice(1, -1); // intermediate points only
+        const mid = sliced.geometry.coordinates.slice(1, -1);
+        return filterByMinDistance(mid, CONFIG.SNAP_SUBDIVISION_MIN_DIST_M);
     } catch {
         return null;
     }
@@ -151,17 +165,24 @@ export function initSnap(map) {
     // Float above all existing layers (draw layers, warning overlays, etc.)
     map.moveLayer(SNAP_INDICATOR_LAYER);
 
+    let _mouseLngLat = null;
+    let _mouseRafId = null;
     map.on('mousemove', e => {
-        if (!appState.activeCampSeasonId) {
-            map.getSource(SNAP_INDICATOR_SOURCE).setData({ type: 'FeatureCollection', features: [] });
-            appState.snapCandidate = null;
-            return;
-        }
-        const candidate = findSnapCandidate(e.lngLat, map.getZoom());
-        appState.snapCandidate = candidate;
-        map.getSource(SNAP_INDICATOR_SOURCE).setData(candidate
-            ? { type: 'FeatureCollection', features: [turf.point([candidate.lngLat.lng, candidate.lngLat.lat])] }
-            : { type: 'FeatureCollection', features: [] });
+        _mouseLngLat = e.lngLat;
+        if (_mouseRafId) return;
+        _mouseRafId = requestAnimationFrame(() => {
+            _mouseRafId = null;
+            if (!appState.activeCampSeasonId) {
+                map.getSource(SNAP_INDICATOR_SOURCE).setData({ type: 'FeatureCollection', features: [] });
+                appState.snapCandidate = null;
+                return;
+            }
+            const candidate = findSnapCandidate(_mouseLngLat, map.getZoom());
+            appState.snapCandidate = candidate;
+            map.getSource(SNAP_INDICATOR_SOURCE).setData(candidate
+                ? { type: 'FeatureCollection', features: [turf.point([candidate.lngLat.lng, candidate.lngLat.lat])] }
+                : { type: 'FeatureCollection', features: [] });
+        });
     });
 
     document.addEventListener('keydown', e => {

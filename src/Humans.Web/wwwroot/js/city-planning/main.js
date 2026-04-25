@@ -29,10 +29,13 @@ async function init() {
         },
     };
 
+    let _lastDragSnapMs = 0;
     const snapDirectSelect = {
         ...MapboxDraw.modes.direct_select,
         onDrag(state, e) {
-            if (appState.snapEnabled && appState.activeCampSeasonId) {
+            const now = Date.now();
+            if (appState.snapEnabled && appState.activeCampSeasonId && now - _lastDragSnapMs >= 16) {
+                _lastDragSnapMs = now;
                 const candidate = findSnapCandidate(e.lngLat, appState.map.getZoom());
                 appState.snapCandidate = candidate;
                 const src = appState.map.getSource('snap-indicator');
@@ -49,7 +52,10 @@ async function init() {
                 const [feature] = appState.draw.getAll().features;
                 if (feature) {
                     const snapped = applySnapToFeature(feature, appState.map);
-                    if (snapped) appState.draw.add(snapped);
+                    if (snapped) {
+                        appState.draw.add(snapped);
+                        onDrawChange();
+                    }
                 }
             }
             return result;

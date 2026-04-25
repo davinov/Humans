@@ -12,5 +12,6 @@ export const CONFIG = {
         [-0.13157837273621453, 41.70290716137069],
     ], // [SW, NE] corners of festival site
 
-    SNAP_RADIUS_PX: 10,
+    SNAP_RADIUS_PX: 50,
+    SNAP_SUBDIVISION_MIN_DIST_M: 10,
 };

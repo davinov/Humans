@@ -225,10 +225,10 @@ export function renderMap(onCampPolygonClick) {
 export function setActivePolygonDim(campSeasonId) {
   const { map } = appState;
   const fillOpacity = campSeasonId
-    ? ['case', ['==', ['get', 'campSeasonId'], campSeasonId], 0.1, ['boolean', ['get', 'isOwn'], false], 0.55, 0.35]
+    ? ['case', ['==', ['get', 'campSeasonId'], campSeasonId], 0, ['boolean', ['get', 'isOwn'], false], 0.55, 0.35]
     : ['case', ['boolean', ['get', 'isOwn'], false], 0.55, 0.35];
   const surpriseOpacity = campSeasonId
-    ? ['case', ['==', ['get', 'campSeasonId'], campSeasonId], 0.1, ['boolean', ['get', 'isOwn'], false], 0.75, 0.55]
+    ? ['case', ['==', ['get', 'campSeasonId'], campSeasonId], 0, ['boolean', ['get', 'isOwn'], false], 0.75, 0.55]
     : ['case', ['boolean', ['get', 'isOwn'], false], 0.75, 0.55];
   if (map.getLayer('camp-polygons-fill')) map.setPaintProperty('camp-polygons-fill', 'fill-opacity', fillOpacity);
   if (map.getLayer('camp-polygons-fill-surprise')) map.setPaintProperty('camp-polygons-fill-surprise', 'fill-opacity', surpriseOpacity);
