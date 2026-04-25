@@ -116,3 +116,48 @@ export function applySnapToFeature(feature, map) {
 
     return { ...feature, geometry: { ...feature.geometry, coordinates: [finalRing] } };
 }
+
+// --- Public: initialise snap indicator and event handlers ---
+
+const SNAP_INDICATOR_SOURCE = 'snap-indicator';
+const SNAP_INDICATOR_LAYER  = 'snap-indicator-ring';
+
+export function initSnap(map) {
+    map.addSource(SNAP_INDICATOR_SOURCE, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+    });
+    map.addLayer({
+        id: SNAP_INDICATOR_LAYER,
+        type: 'circle',
+        source: SNAP_INDICATOR_SOURCE,
+        paint: {
+            'circle-radius': 8,
+            'circle-color': 'transparent',
+            'circle-stroke-color': '#00e5ff',
+            'circle-stroke-width': 2,
+        },
+    });
+    // Float above all existing layers (draw layers, warning overlays, etc.)
+    map.moveLayer(SNAP_INDICATOR_LAYER);
+
+    map.on('mousemove', e => {
+        if (!appState.activeCampSeasonId) {
+            map.getSource(SNAP_INDICATOR_SOURCE).setData({ type: 'FeatureCollection', features: [] });
+            appState.snapCandidate = null;
+            return;
+        }
+        const candidate = findSnapCandidate(e.lngLat, map.getZoom());
+        appState.snapCandidate = candidate;
+        map.getSource(SNAP_INDICATOR_SOURCE).setData(candidate
+            ? { type: 'FeatureCollection', features: [turf.point([candidate.lngLat.lng, candidate.lngLat.lat])] }
+            : { type: 'FeatureCollection', features: [] });
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Alt') { appState.snapEnabled = false; appState.snapCandidate = null; }
+    });
+    document.addEventListener('keyup', e => {
+        if (e.key === 'Alt') appState.snapEnabled = true;
+    });
+}
