@@ -1423,6 +1423,7 @@
   <data name="CityPlanning_AddABarrioOption" xml:space="preserve"><value>Ajouter un barrio…</value></data>
   <data name="CityPlanning_SaveButton" xml:space="preserve"><value>Enregistrer</value></data>
   <data name="CityPlanning_HistoryButton" xml:space="preserve"><value>Historique</value></data>
+  <data name="CityPlanning_SnapHint" xml:space="preserve"><value>Maintenez Alt pour désactiver l'aimantation</value></data>
   <data name="CityPlanning_AdminLink" xml:space="preserve"><value>Admin</value></data>
   <data name="CityPlanning_Admin_Title" xml:space="preserve"><value>Admin Carte des Barrios</value></data>
   <data name="CityPlanning_Admin_ViewMap" xml:space="preserve"><value>Voir la carte</value></data>

@@ -114,15 +114,18 @@ export function onDrawDelete() {
 export function setEditingControlsVisible(visible) {
     const toolbar = document.getElementById('main-toolbar');
     if (!toolbar) return;
-    const saveBtn = document.getElementById('save-btn');
+    const saveBtn  = document.getElementById('save-btn');
+    const snapHint = document.getElementById('snap-hint');
     if (visible) {
         toolbar.style.display = '';
         const addMyBarrioBtn = document.getElementById('add-my-barrio-btn');
         if (addMyBarrioBtn) addMyBarrioBtn.style.display = 'none';
-        if (saveBtn) saveBtn.style.display = '';
+        if (saveBtn)  saveBtn.style.display  = '';
+        if (snapHint) snapHint.style.display = '';
         return;
     }
-    if (saveBtn) saveBtn.style.display = 'none';
+    if (saveBtn)  saveBtn.style.display  = 'none';
+    if (snapHint) snapHint.style.display = 'none';
     updateAddMyBarrioVisibility();
     const addMyBarrioVisible = document.getElementById('add-my-barrio-btn')?.style.display !== 'none';
     const addBarrioPresent   = !!document.getElementById('add-barrio-container');
