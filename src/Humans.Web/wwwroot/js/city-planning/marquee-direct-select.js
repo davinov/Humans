@@ -50,8 +50,12 @@ export const MarqueeDirectSelectMode = {
 
     onMouseDown(state, e) {
         if (e.originalEvent.button !== 0) return;
+
+        // Remove any marquee div orphaned by a previous drag-off-map
+        if (state.marqueeEl) { state.marqueeEl.remove(); state.marqueeEl = null; }
+
         const meta = e.featureTarget?.properties?.meta;
-        if (meta === 'vertex' || meta === 'midpoint') {
+        if (meta === 'vertex' || meta === 'midpoint' || meta === 'feature') {
             return DirectSelectMode.onMouseDown.call(this, state, e);
         }
         state.marqueeStart = e.point;   // container-relative pixels
@@ -59,6 +63,18 @@ export const MarqueeDirectSelectMode = {
         state.isMarquee    = false;
         state.marqueeEl    = null;
         this.map.dragPan.disable();
+
+        // If the user releases the mouse outside the map, onMouseUp never fires.
+        // This one-shot document listener re-enables dragPan and removes the marquee div.
+        const cleanup = () => {
+            this.map.dragPan.enable();
+            if (state.marqueeEl) { state.marqueeEl.remove(); state.marqueeEl = null; }
+            state.marqueeStart = null;
+            state.isMarquee    = false;
+            state._docMouseUp  = null;
+        };
+        state._docMouseUp = cleanup;
+        document.addEventListener('mouseup', cleanup, { once: true });
     },
 
     onDrag(state, e) {
@@ -76,6 +92,11 @@ export const MarqueeDirectSelectMode = {
     },
 
     onMouseUp(state, e) {
+        // Normal in-map release: cancel the document-level fallback
+        if (state._docMouseUp) {
+            document.removeEventListener('mouseup', state._docMouseUp);
+            state._docMouseUp = null;
+        }
         if (!state.marqueeStart) {
             return DirectSelectMode.onMouseUp.call(this, state, e);
         }
@@ -102,6 +123,10 @@ export const MarqueeDirectSelectMode = {
 
     onStop(state) {
         // Guard: clean up if user exits edit mode mid-drag
+        if (state._docMouseUp) {
+            document.removeEventListener('mouseup', state._docMouseUp);
+            state._docMouseUp = null;
+        }
         this.map.dragPan.enable();
         if (state.marqueeEl) { state.marqueeEl.remove(); state.marqueeEl = null; }
         return DirectSelectMode.onStop.call(this, state);
