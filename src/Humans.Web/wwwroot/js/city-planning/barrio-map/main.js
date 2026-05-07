@@ -9,7 +9,7 @@ import {
 } from './edit.js';
 import { initSignalR } from './signalr.js';
 import { MarqueeDirectSelectMode } from './marquee-direct-select.js';
-import { initMeasure, enterMeasureMode, exitMeasureMode, isMeasuring } from '../shared/measure.js';
+import { initMeasure, enterMeasureMode, exitMeasureMode, isMeasuring, clearAllMeasurements } from '../shared/measure.js';
 
 async function init() {
     appState.map = new maplibregl.Map({
@@ -141,6 +141,10 @@ document.getElementById('measure-btn')?.addEventListener('click', () => {
     if (isMeasuring()) { exitMeasureMode(); return; }
     if (appState.activeCampSeasonId) exitEditMode();
     enterMeasureMode();
+});
+
+document.getElementById('clear-measurements-btn')?.addEventListener('click', () => {
+    clearAllMeasurements();
 });
 
 init();

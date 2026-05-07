@@ -1,12 +1,16 @@
-// Measuring tool: two-point distance with rubber-band preview.
+// Measuring tool: two-point distance with rubber-band preview, multi-measurement support.
 
 const EMPTY_FC = { type: 'FeatureCollection', features: [] };
 
-let _map         = null;
-let _active      = false;
-let _firstPoint  = null;
-let _secondPoint = null;
-let _onMouseMove = null;
+let _map          = null;
+let _active       = false;
+let _measurements = []; // Array<{ id: string, a: [lng,lat], b: [lng,lat] }>
+let _pending      = null; // { a: [lng,lat] } | null — in-flight first point
+let _onMouseMove  = null;
+
+function newId() {
+    return crypto.randomUUID();
+}
 
 function formatDistance(meters) {
     if (meters >= 1000) return (meters / 1000).toFixed(2) + ' km';
@@ -22,48 +26,81 @@ function distanceLabel(a, b) {
     return formatDistance(meters);
 }
 
-function setPoints(pts) {
-    _map.getSource('measure-points').setData({
-        type: 'FeatureCollection',
-        features: pts.map(p => ({ type: 'Feature', geometry: { type: 'Point', coordinates: p }, properties: {} })),
-    });
+function updateClearBtn() {
+    const btn = document.getElementById('clear-measurements-btn');
+    if (!btn) return;
+    btn.classList.toggle('d-none', _measurements.length === 0);
 }
 
-function setLine(a, b) {
+function renderMeasurements() {
+    const pointFeatures = [];
+    for (const m of _measurements) {
+        pointFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: m.a },
+            properties: { measurementId: m.id },
+        });
+        pointFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: m.b },
+            properties: { measurementId: m.id },
+        });
+    }
+    if (_pending) {
+        pointFeatures.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: _pending.a },
+            properties: {},
+        });
+    }
+    _map.getSource('measure-points').setData({ type: 'FeatureCollection', features: pointFeatures });
+
     _map.getSource('measure-line').setData({
         type: 'FeatureCollection',
-        features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: [a, b] }, properties: {} }],
+        features: _measurements.map(m => ({
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: [m.a, m.b] },
+            properties: { measurementId: m.id },
+        })),
     });
-}
 
-function setPreviewLine(a, b) {
-    _map.getSource('measure-preview-line').setData({
-        type: 'FeatureCollection',
-        features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: [a, b] }, properties: {} }],
-    });
-}
-
-function setLabel(pos, text) {
     _map.getSource('measure-label').setData({
         type: 'FeatureCollection',
-        features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: pos }, properties: { label: text } }],
+        features: _measurements.map(m => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: midpoint(m.a, m.b) },
+            properties: { measurementId: m.id, label: distanceLabel(m.a, m.b) },
+        })),
     });
-}
 
-function clearAll() {
-    _map.getSource('measure-points')?.setData(EMPTY_FC);
-    _map.getSource('measure-line')?.setData(EMPTY_FC);
-    _map.getSource('measure-preview-line')?.setData(EMPTY_FC);
-    _map.getSource('measure-label')?.setData(EMPTY_FC);
+    _map.getSource('measure-preview-line').setData(EMPTY_FC);
 }
 
 function attachMouseMove() {
     detachMouseMove();
     _onMouseMove = e => {
-        if (!_firstPoint) return;
+        if (!_pending) return;
         const cursor = [e.lngLat.lng, e.lngLat.lat];
-        setPreviewLine(_firstPoint, cursor);
-        setLabel(midpoint(_firstPoint, cursor), distanceLabel(_firstPoint, cursor));
+        _map.getSource('measure-preview-line').setData({
+            type: 'FeatureCollection',
+            features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: [_pending.a, cursor] }, properties: {} }],
+        });
+        // Add live preview label alongside committed labels
+        _map.getSource('measure-label').setData({
+            type: 'FeatureCollection',
+            features: [
+                ..._measurements.map(m => ({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: midpoint(m.a, m.b) },
+                    properties: { measurementId: m.id, label: distanceLabel(m.a, m.b) },
+                })),
+                {
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: midpoint(_pending.a, cursor) },
+                    properties: { label: distanceLabel(_pending.a, cursor) },
+                },
+            ],
+        });
     };
     _map.on('mousemove', _onMouseMove);
 }
@@ -78,41 +115,35 @@ function detachMouseMove() {
 function onMapClick(e) {
     const coord = [e.lngLat.lng, e.lngLat.lat];
 
-    if (!_firstPoint) {
-        _firstPoint = coord;
-        _secondPoint = null;
-        setPoints([_firstPoint]);
-        _map.getSource('measure-line').setData(EMPTY_FC);
-        _map.getSource('measure-label').setData(EMPTY_FC);
+    // 1. Hit-test: click on an existing measurement deletes it
+    const hits = _map.queryRenderedFeatures(e.point, { layers: ['measure-points', 'measure-label'] });
+    const hitWithId = hits.find(f => f.properties.measurementId);
+    if (hitWithId) {
+        _measurements = _measurements.filter(m => m.id !== hitWithId.properties.measurementId);
+        renderMeasurements();
+        updateClearBtn();
+        return;
+    }
+
+    // 2. First click: start pending measurement
+    if (!_pending) {
+        _pending = { a: coord };
         attachMouseMove();
+        renderMeasurements();
         return;
     }
 
-    if (!_secondPoint) {
-        _secondPoint = coord;
-        setPoints([_firstPoint, _secondPoint]);
-        setLine(_firstPoint, _secondPoint);
-        setLabel(midpoint(_firstPoint, _secondPoint), distanceLabel(_firstPoint, _secondPoint));
-        _map.getSource('measure-preview-line').setData(EMPTY_FC);
-        detachMouseMove();
-        return;
-    }
-
-    // Third click: start a new measurement from this point
-    _firstPoint = coord;
-    _secondPoint = null;
-    setPoints([_firstPoint]);
-    _map.getSource('measure-line').setData(EMPTY_FC);
-    _map.getSource('measure-label').setData(EMPTY_FC);
-    attachMouseMove();
+    // 3. Second click: complete measurement
+    _measurements.push({ id: newId(), a: _pending.a, b: coord });
+    _pending = null;
+    detachMouseMove();
+    renderMeasurements();
+    updateClearBtn();
 }
 
 export function enterMeasureMode() {
     if (_active) return;
     _active = true;
-    _firstPoint = null;
-    _secondPoint = null;
-    clearAll();
     _map.getCanvas().style.cursor = 'crosshair';
     _map.on('click', onMapClick);
 
@@ -126,11 +157,10 @@ export function exitMeasureMode() {
     if (!_active) return;
     detachMouseMove();
     _map.off('click', onMapClick);
-    clearAll();
-    _firstPoint = null;
-    _secondPoint = null;
+    _pending = null;
     _active = false;
     _map.getCanvas().style.cursor = '';
+    renderMeasurements();
 
     const btn = document.getElementById('measure-btn');
     btn.classList.remove('btn-warning');
@@ -139,6 +169,12 @@ export function exitMeasureMode() {
 }
 
 export function isMeasuring() { return _active; }
+
+export function clearAllMeasurements() {
+    _measurements = [];
+    renderMeasurements();
+    updateClearBtn();
+}
 
 export function initMeasure(map) {
     _map = map;
