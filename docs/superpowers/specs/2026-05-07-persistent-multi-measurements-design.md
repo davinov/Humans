@@ -32,7 +32,7 @@ User feedback: measurements should **persist** when switching to other operation
 - Entering measure mode does **not** clear existing measurements.
 - First click on empty map: drops point A, starts rubber-band preview line + live distance label following the cursor.
 - Second click on empty map: drops point B, completes the measurement (point markers, dashed line, midpoint distance label). The new measurement joins the persistent collection. Rubber-band preview clears. **Measure mode auto-exits** — to add another measurement, the user re-clicks the Measure button.
-- Click on an existing measurement's point or label (while in measure mode): **deletes that measurement**. A click that hits a measurement feature is consumed by deletion and does **not** start a new measurement, even if a `_pending` first point exists.
+- **Right-click** (contextmenu) on an existing measurement's point or label (while in measure mode): **deletes that measurement**. The browser context menu is suppressed for that hit. Left-clicks always go through the first/second-click measurement flow — they never delete.
 
 ### Measure mode (toggle off / switch to another mode)
 
@@ -75,24 +75,26 @@ A single `renderMeasurements()` function rebuilds all four sources from `_measur
 
 ## Click Handling
 
-The `click` handler is only attached while measure mode is active. Outside measure mode, this module does not listen for clicks; measurement features are inert visual overlays.
+The `click` and `contextmenu` handlers are only attached while measure mode is active. Outside measure mode, this module does not listen for either; measurement features are inert visual overlays.
 
-Click flow inside measure mode:
+Left-click flow inside measure mode:
 
-1. Hit-test against `measure-points` and `measure-label` layers via `map.queryRenderedFeatures(e.point, { layers: [...] })`. If any hit has a `measurementId`:
-   - Remove that measurement from `_measurements`, re-render, update clear-button visibility. Done.
-2. Else if `_pending == null`:
+1. If `_pending == null`:
    - `_pending = { a: coord }`, attach mousemove for preview, render.
-3. Else (`_pending.a` is set):
+2. Else (`_pending.a` is set):
    - Push `{ id: newId(), a: _pending.a, b: coord }` into `_measurements`, then call `exitMeasureMode()` (which clears `_pending`, detaches mousemove, restores cursor/button), update clear-button visibility.
+
+Right-click (contextmenu) flow inside measure mode:
+
+- Hit-test against `measure-points` and `measure-label` layers. If any hit has a `measurementId`, suppress the browser context menu (`e.preventDefault()`), remove that measurement, re-render, update clear-button visibility. Otherwise: do nothing (let the browser show its native menu).
 
 ## Module API
 
 Existing exports keep their names (callers don't change):
 
 - `initMeasure(map)` — unchanged signature; sets up sources and layers.
-- `enterMeasureMode()` — attaches click handler, sets cursor and button styling. Does NOT clear existing measurements.
-- `exitMeasureMode()` — detaches click handler and mousemove, clears `_pending` and the rubber-band preview source, restores cursor and button styling. Does NOT clear `_measurements`.
+- `enterMeasureMode()` — attaches click + contextmenu handlers, sets cursor and button styling. Does NOT clear existing measurements.
+- `exitMeasureMode()` — detaches click, contextmenu, and mousemove handlers, clears `_pending` and the rubber-band preview source, restores cursor and button styling. Does NOT clear `_measurements`.
 - `isMeasuring()` — unchanged.
 
 New export:

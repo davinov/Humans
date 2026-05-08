@@ -115,17 +115,7 @@ function detachMouseMove() {
 function onMapClick(e) {
     const coord = [e.lngLat.lng, e.lngLat.lat];
 
-    // 1. Hit-test: click on an existing measurement deletes it
-    const hits = _map.queryRenderedFeatures(e.point, { layers: ['measure-points', 'measure-label'] });
-    const hitWithId = hits.find(f => f.properties.measurementId);
-    if (hitWithId) {
-        _measurements = _measurements.filter(m => m.id !== hitWithId.properties.measurementId);
-        renderMeasurements();
-        updateClearBtn();
-        return;
-    }
-
-    // 2. First click: start pending measurement
+    // 1. First click: start pending measurement
     if (!_pending) {
         _pending = { a: coord };
         attachMouseMove();
@@ -133,9 +123,20 @@ function onMapClick(e) {
         return;
     }
 
-    // 3. Second click: complete measurement and exit measure mode
+    // 2. Second click: complete measurement and exit measure mode
     _measurements.push({ id: newId(), a: _pending.a, b: coord });
     exitMeasureMode();
+    updateClearBtn();
+}
+
+function onMapContextMenu(e) {
+    // Right-click on an existing measurement deletes it.
+    const hits = _map.queryRenderedFeatures(e.point, { layers: ['measure-points', 'measure-label'] });
+    const hitWithId = hits.find(f => f.properties.measurementId);
+    if (!hitWithId) return;
+    e.preventDefault();
+    _measurements = _measurements.filter(m => m.id !== hitWithId.properties.measurementId);
+    renderMeasurements();
     updateClearBtn();
 }
 
@@ -144,6 +145,7 @@ export function enterMeasureMode() {
     _active = true;
     _map.getCanvas().style.cursor = 'crosshair';
     _map.on('click', onMapClick);
+    _map.on('contextmenu', onMapContextMenu);
 
     const btn = document.getElementById('measure-btn');
     btn.classList.remove('btn-outline-secondary');
@@ -155,6 +157,7 @@ export function exitMeasureMode() {
     if (!_active) return;
     detachMouseMove();
     _map.off('click', onMapClick);
+    _map.off('contextmenu', onMapContextMenu);
     _pending = null;
     _active = false;
     _map.getCanvas().style.cursor = '';
