@@ -177,6 +177,20 @@ export function clearAllMeasurements() {
     updateClearBtn();
 }
 
+/**
+ * Wire the standard `#measure-btn` (toggle) and `#clear-measurements-btn` (clear-all) pair.
+ * @param {{ beforeEnter?: () => void }} [opts] — `beforeEnter` runs once, just before
+ *   transitioning into measure mode (e.g. to exit a conflicting edit/selection mode).
+ */
+export function wireMeasureButtons({ beforeEnter } = {}) {
+    document.getElementById('measure-btn')?.addEventListener('click', () => {
+        if (isMeasuring()) { exitMeasureMode(); return; }
+        beforeEnter?.();
+        enterMeasureMode();
+    });
+    document.getElementById('clear-measurements-btn')?.addEventListener('click', clearAllMeasurements);
+}
+
 export function initMeasure(map) {
     _map = map;
 

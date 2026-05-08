@@ -1,1 +1,1 @@
-export { initMeasure, enterMeasureMode, exitMeasureMode, isMeasuring, clearAllMeasurements } from '../shared/measure.js';
+export { initMeasure, enterMeasureMode, exitMeasureMode, isMeasuring, clearAllMeasurements, wireMeasureButtons } from '../shared/measure.js';
