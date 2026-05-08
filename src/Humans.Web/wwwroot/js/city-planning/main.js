@@ -2,7 +2,7 @@
 // Shows official zones and camps always; containers and camp limits are togglable.
 
 import { CONFIG } from './config.js';
-import { initMeasure, enterMeasureMode, exitMeasureMode, isMeasuring } from './shared/measure.js';
+import { initMeasure, enterMeasureMode, exitMeasureMode, isMeasuring, clearAllMeasurements } from './shared/measure.js';
 import { addOfficialZonesLayers } from './shared/official-zones-layer.js';
 import { SOUND_ZONE_FILL_EXPR, SOUND_ZONE_LINE_EXPR } from './shared/sound-zone-colors.js';
 
@@ -95,6 +95,10 @@ async function init() {
 
     document.getElementById('measure-btn').addEventListener('click', () => {
         if (isMeasuring()) exitMeasureMode(); else enterMeasureMode();
+    });
+
+    document.getElementById('clear-measurements-btn')?.addEventListener('click', () => {
+        clearAllMeasurements();
     });
 }
 
