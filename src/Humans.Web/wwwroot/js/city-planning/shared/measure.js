@@ -201,11 +201,14 @@ export function initMeasure(map) {
         paint: { 'text-color': inkColor, 'text-halo-color': haloColor, 'text-halo-width': 2 },
     });
     map.addLayer({
-        id: 'measure-points-stroke', type: 'circle', source: 'measure-points',
-        paint: { 'circle-radius': 10, 'circle-color': haloColor },
-    });
-    map.addLayer({
-        id: 'measure-points', type: 'circle', source: 'measure-points',
-        paint: { 'circle-radius': 7, 'circle-color': inkColor },
+        id: 'measure-points', type: 'symbol', source: 'measure-points',
+        layout: {
+            'text-field': '+',
+            'text-size': 22,
+            'text-anchor': 'center',
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
+        },
+        paint: { 'text-color': inkColor, 'text-halo-color': haloColor, 'text-halo-width': 2 },
     });
 }
