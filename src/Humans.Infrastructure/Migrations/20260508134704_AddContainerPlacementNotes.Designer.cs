@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Humans.Infrastructure.Migrations
 {
     [DbContext(typeof(HumansDbContext))]
-    [Migration("20260508000000_AddContainerPlacementNotes")]
+    [Migration("20260508134704_AddContainerPlacementNotes")]
     partial class AddContainerPlacementNotes
     {
         /// <inheritdoc />
@@ -75,6 +75,155 @@ namespace Humans.Infrastructure.Migrations
                     b.HasIndex("TargetUserId");
 
                     b.ToTable("account_merge_requests", (string)null);
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.AgentConversation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Instant>("LastMessageAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("MessageCount")
+                        .HasColumnType("integer");
+
+                    b.Property<Instant>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastMessageAt");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("agent_conversations", (string)null);
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.AgentMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CachedTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Instant>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DurationMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FetchedDocs")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid?>("HandedOffToFeedbackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("OutputTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PromptTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RefusalReason")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("HandedOffToFeedbackId");
+
+                    b.HasIndex("RefusalReason");
+
+                    b.ToTable("agent_messages", (string)null);
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.AgentSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DailyMessageCap")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DailyTokenCap")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("HourlyMessageCap")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PreloadConfig")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("RetentionDays")
+                        .HasColumnType("integer");
+
+                    b.Property<Instant>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("agent_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_agent_settings_singleton", "\"Id\" = 1");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DailyMessageCap = 30,
+                            DailyTokenCap = 50000,
+                            Enabled = false,
+                            HourlyMessageCap = 10,
+                            Model = "claude-sonnet-4-6",
+                            PreloadConfig = "Tier1",
+                            RetentionDays = 90,
+                            UpdatedAt = NodaTime.Instant.FromUnixTimeTicks(17767296000000000L)
+                        });
                 });
 
             modelBuilder.Entity("Humans.Domain.Entities.Application", b =>
@@ -939,6 +1088,84 @@ namespace Humans.Infrastructure.Migrations
                     b.ToTable("camp_polygon_histories", (string)null);
                 });
 
+            modelBuilder.Entity("Humans.Domain.Entities.CampRoleAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Instant>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("AssignedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CampMemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CampRoleDefinitionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CampSeasonId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampMemberId");
+
+                    b.HasIndex("CampRoleDefinitionId");
+
+                    b.HasIndex("CampSeasonId", "CampRoleDefinitionId", "CampMemberId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_camp_role_assignments_unique");
+
+                    b.ToTable("camp_role_assignments", (string)null);
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.CampRoleDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Instant>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Instant?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("MinimumRequired")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SlotCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<Instant>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_camp_role_definitions_name_unique");
+
+                    b.HasIndex("SortOrder");
+
+                    b.ToTable("camp_role_definitions", (string)null);
+                });
+
             modelBuilder.Entity("Humans.Domain.Entities.CampSeason", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1422,6 +1649,10 @@ namespace Humans.Infrastructure.Migrations
                     b.Property<string>("LocationGeoJson")
                         .HasColumnType("text");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("PlacementImageContentType")
                         .HasMaxLength(64)
@@ -1437,11 +1668,6 @@ namespace Humans.Infrastructure.Migrations
 
                     b.Property<string>("PlacementNotes")
                         .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
 
                     b.Property<Instant>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1734,6 +1960,9 @@ namespace Humans.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<Guid?>("AgentConversationId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("AssignedToTeamId")
                         .HasColumnType("uuid");
 
@@ -1785,6 +2014,13 @@ namespace Humans.Infrastructure.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValueSql("'UserReport'");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1802,6 +2038,8 @@ namespace Humans.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AgentConversationId");
+
                     b.HasIndex("AssignedToTeamId");
 
                     b.HasIndex("AssignedToUserId");
@@ -1809,6 +2047,8 @@ namespace Humans.Infrastructure.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("ResolvedByUserId");
+
+                    b.HasIndex("Source");
 
                     b.HasIndex("Status");
 
@@ -1962,6 +2202,134 @@ namespace Humans.Infrastructure.Migrations
                     b.HasIndex("TeamId", "UserId", "ProcessedAt");
 
                     b.ToTable("google_sync_outbox", (string)null);
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.Issue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdditionalContext")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("AssigneeUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Instant>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<LocalDate?>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("GitHubIssueNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PageUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("ReporterUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Instant?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ScreenshotContentType")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ScreenshotFileName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ScreenshotStoragePath")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("Section")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Instant>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssigneeUserId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ReporterUserId");
+
+                    b.HasIndex("ResolvedByUserId");
+
+                    b.HasIndex("Section");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Section", "Status");
+
+                    b.ToTable("issues", (string)null);
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.IssueComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<Instant>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("IssueId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SenderUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IssueId");
+
+                    b.HasIndex("SenderUserId");
+
+                    b.ToTable("issue_comments", (string)null);
                 });
 
             modelBuilder.Entity("Humans.Domain.Entities.LegalDocument", b =>
@@ -3354,7 +3722,8 @@ namespace Humans.Infrastructure.Migrations
 
                     b.Property<string>("GoogleEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("GoogleEmail");
 
                     b.Property<string>("GoogleEmailStatus")
                         .IsRequired()
@@ -3380,6 +3749,12 @@ namespace Humans.Infrastructure.Migrations
 
                     b.Property<Instant?>("MagicLinkSentAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Instant?>("MergedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("MergedToUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -3429,6 +3804,9 @@ namespace Humans.Infrastructure.Migrations
 
                     b.HasIndex("Email");
 
+                    b.HasIndex("MergedToUserId")
+                        .HasFilter("\"MergedToUserId\" IS NOT NULL");
+
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -3452,21 +3830,35 @@ namespace Humans.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("DisplayOrder");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<bool>("IsNotificationTarget")
+                    b.Property<bool>("IsGoogle")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsOAuth")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("IsOAuth");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("IsNotificationTarget");
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<Instant>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -3800,6 +4192,17 @@ namespace Humans.Infrastructure.Migrations
                     b.Navigation("TargetUser");
                 });
 
+            modelBuilder.Entity("Humans.Domain.Entities.AgentMessage", b =>
+                {
+                    b.HasOne("Humans.Domain.Entities.AgentConversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+                });
+
             modelBuilder.Entity("Humans.Domain.Entities.Application", b =>
                 {
                     b.HasOne("Humans.Domain.Entities.User", null)
@@ -4050,6 +4453,33 @@ namespace Humans.Infrastructure.Migrations
                     b.Navigation("CampSeason");
 
                     b.Navigation("ModifiedByUser");
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.CampRoleAssignment", b =>
+                {
+                    b.HasOne("Humans.Domain.Entities.CampMember", "CampMember")
+                        .WithMany()
+                        .HasForeignKey("CampMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Humans.Domain.Entities.CampRoleDefinition", "Definition")
+                        .WithMany("Assignments")
+                        .HasForeignKey("CampRoleDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Humans.Domain.Entities.CampSeason", "CampSeason")
+                        .WithMany()
+                        .HasForeignKey("CampSeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CampMember");
+
+                    b.Navigation("CampSeason");
+
+                    b.Navigation("Definition");
                 });
 
             modelBuilder.Entity("Humans.Domain.Entities.CampSeason", b =>
@@ -4303,6 +4733,49 @@ namespace Humans.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.Issue", b =>
+                {
+                    b.HasOne("Humans.Domain.Entities.User", "Assignee")
+                        .WithMany()
+                        .HasForeignKey("AssigneeUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Humans.Domain.Entities.User", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Humans.Domain.Entities.User", "ResolvedByUser")
+                        .WithMany()
+                        .HasForeignKey("ResolvedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Assignee");
+
+                    b.Navigation("Reporter");
+
+                    b.Navigation("ResolvedByUser");
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.IssueComment", b =>
+                {
+                    b.HasOne("Humans.Domain.Entities.Issue", "Issue")
+                        .WithMany("Comments")
+                        .HasForeignKey("IssueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Humans.Domain.Entities.User", "SenderUser")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Issue");
+
+                    b.Navigation("SenderUser");
                 });
 
             modelBuilder.Entity("Humans.Domain.Entities.LegalDocument", b =>
@@ -4600,6 +5073,14 @@ namespace Humans.Infrastructure.Migrations
                     b.Navigation("BudgetGroup");
                 });
 
+            modelBuilder.Entity("Humans.Domain.Entities.User", b =>
+                {
+                    b.HasOne("Humans.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MergedToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("Humans.Domain.Entities.UserEmail", b =>
                 {
                     b.HasOne("Humans.Domain.Entities.User", null)
@@ -4712,6 +5193,11 @@ namespace Humans.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Humans.Domain.Entities.AgentConversation", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("Humans.Domain.Entities.Application", b =>
                 {
                     b.Navigation("BoardVotes");
@@ -4754,6 +5240,11 @@ namespace Humans.Infrastructure.Migrations
                     b.Navigation("Seasons");
                 });
 
+            modelBuilder.Entity("Humans.Domain.Entities.CampRoleDefinition", b =>
+                {
+                    b.Navigation("Assignments");
+                });
+
             modelBuilder.Entity("Humans.Domain.Entities.Campaign", b =>
                 {
                     b.Navigation("Codes");
@@ -4784,6 +5275,11 @@ namespace Humans.Infrastructure.Migrations
             modelBuilder.Entity("Humans.Domain.Entities.FeedbackReport", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("Humans.Domain.Entities.Issue", b =>
+                {
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("Humans.Domain.Entities.LegalDocument", b =>
