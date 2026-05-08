@@ -109,7 +109,7 @@ else
                     {
                         <button type="button" class="btn btn-outline-secondary btn-sm"
                                 data-bs-toggle="modal" data-bs-target="#imageModal-@c.Id"
-                                title="@Localizer["Container_UploadImageTitle"]">
+                                title="@Localizer["Container_FieldMainImage"]">
                             <i class="fa-solid fa-image"></i>
                         </button>
                     }
@@ -118,8 +118,8 @@ else
                         <form asp-action="DeleteOrgContainerImage" asp-route-id="@c.Id" method="post" class="d-inline">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-outline-warning btn-sm"
-                                    data-confirm="@string.Format(Localizer["Container_RemoveImageConfirm"], c.Name)"
-                                    title="@Localizer["Container_RemoveImageTitle"]">
+                                    data-confirm="@string.Format(Localizer["Container_RemoveMainImageConfirm"], c.Name)"
+                                    title="@Localizer["Container_RemoveMainImage_Label"]">
                                 <i class="fa-solid fa-image"></i>
                             </button>
                         </form>
@@ -195,7 +195,7 @@ else
                         {
                             <button type="button" class="btn btn-outline-secondary btn-sm"
                                     data-bs-toggle="modal" data-bs-target="#imageModal-@c.Id"
-                                    title="@Localizer["Container_UploadImageTitle"]">
+                                    title="@Localizer["Container_FieldMainImage"]">
                                 <i class="fa-solid fa-image"></i>
                             </button>
                         }
@@ -204,8 +204,8 @@ else
                             <form asp-action="DeleteOrgContainerImage" asp-route-id="@c.Id" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-outline-warning btn-sm"
-                                        data-confirm="@string.Format(Localizer["Container_RemoveImageConfirm"], c.Name)"
-                                        title="@Localizer["Container_RemoveImageTitle"]">
+                                        data-confirm="@string.Format(Localizer["Container_RemoveMainImageConfirm"], c.Name)"
+                                        title="@Localizer["Container_RemoveMainImage_Label"]">
                                     <i class="fa-solid fa-image"></i>
                                 </button>
                             </form>
@@ -339,7 +339,7 @@ else
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">@string.Format(Localizer["Container_UploadImageModal_Title"], c.Name)</h5>
+                        <h5 class="modal-title">@string.Format(Localizer["Container_UploadMainImageModal_Title"], c.Name)</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <form asp-action="UploadOrgContainerImage" asp-route-id="@c.Id"
@@ -347,7 +347,7 @@ else
                         @Html.AntiForgeryToken()
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label class="form-label">@Localizer["Container_ImageFileLabel"]</label>
+                                <label class="form-label">@Localizer["Container_FieldMainImage"]</label>
                                 <input type="file" name="file" class="form-control" accept="image/jpeg,image/png,image/webp" required />
                             </div>
                         </div>

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Humans.Web.Models;
 
@@ -22,6 +23,10 @@ public class ContainerViewModel
     public string? ImageUrl { get; set; }
     public string? ImageFileName { get; set; }
     public bool IsPlaced { get; set; }
+    public string? PlacementNotes { get; set; }
+    public string? PlacementImageUrl { get; set; }
+    public string? PlacementImageFileName { get; set; }
+    public bool HasPlacementInfo => !string.IsNullOrEmpty(PlacementNotes) || PlacementImageUrl is not null;
 }
 
 public class ContainerFormModel
@@ -32,6 +37,12 @@ public class ContainerFormModel
 
     [StringLength(2000)]
     public string? Description { get; set; }
+
+    public string? PlacementNotes { get; set; }
+    public IFormFile? MainImage { get; set; }
+    public IFormFile? PlacementImage { get; set; }
+    public bool RemoveMainImage { get; set; }
+    public bool RemovePlacementImage { get; set; }
 }
 
 public class OrgContainerIndexViewModel
