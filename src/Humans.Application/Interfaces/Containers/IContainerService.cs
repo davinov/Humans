@@ -23,7 +23,7 @@ public interface IContainerImageStorage
 
 public enum ContainerImageKind { Main, Placement }
 
-public record ContainerImageUpload(Stream Content, string ContentType, string FileName);
+public record ContainerImageUpload(Stream Content, string ContentType, string FileName, long Length);
 
 public record ContainerDto(
     Guid Id,

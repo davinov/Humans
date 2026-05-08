@@ -38,7 +38,7 @@ public class ContainerImageServiceTests : IDisposable
     }
 
     private static ContainerImageUpload FakeImage(string kind = "main") =>
-        new(Stream.Null, "image/jpeg", $"{kind}-sketch.jpg");
+        new(Stream.Null, "image/jpeg", $"{kind}-sketch.jpg", 1024);
 
     private async Task<Container> SeedContainerAsync(
         string? imagePath = null,

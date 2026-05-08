@@ -52,10 +52,10 @@ public class ContainerFormModel
         Description: Description,
         PlacementNotes: PlacementNotes,
         MainImage: MainImage is { Length: > 0 }
-            ? new ContainerImageUpload(MainImage.OpenReadStream(), MainImage.ContentType, MainImage.FileName)
+            ? new ContainerImageUpload(MainImage.OpenReadStream(), MainImage.ContentType, MainImage.FileName, MainImage.Length)
             : null,
         PlacementImage: PlacementImage is { Length: > 0 }
-            ? new ContainerImageUpload(PlacementImage.OpenReadStream(), PlacementImage.ContentType, PlacementImage.FileName)
+            ? new ContainerImageUpload(PlacementImage.OpenReadStream(), PlacementImage.ContentType, PlacementImage.FileName, PlacementImage.Length)
             : null,
         RemoveMainImage: RemoveMainImage,
         RemovePlacementImage: RemovePlacementImage);

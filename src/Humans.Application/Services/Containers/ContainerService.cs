@@ -178,8 +178,12 @@ public sealed class ContainerService : IContainerService
     {
         if (mainImage is not null && !AllowedContentTypes.Contains(mainImage.ContentType))
             throw new InvalidOperationException("Only JPEG, PNG, and WebP images are allowed.");
+        if (mainImage is not null && mainImage.Length > MaxImageBytes)
+            throw new InvalidOperationException("Image must be under 10 MB.");
         if (placementImage is not null && !AllowedContentTypes.Contains(placementImage.ContentType))
             throw new InvalidOperationException("Only JPEG, PNG, and WebP images are allowed.");
+        if (placementImage is not null && placementImage.Length > MaxImageBytes)
+            throw new InvalidOperationException("Image must be under 10 MB.");
     }
 
     private static ContainerDto ToDto(Container c) => new(
