@@ -107,7 +107,7 @@ Both `BarrioMap.cshtml` and `ContainerMap.cshtml` add a sibling button:
 
 ```html
 <button id="clear-measurements-btn" type="button" class="btn btn-sm btn-outline-danger d-none" aria-label="Clear all measurements">
-  <i class="bi bi-x-lg"></i>
+  <i class="fa-solid fa-trash"></i>
 </button>
 ```
 
