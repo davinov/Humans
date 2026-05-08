@@ -31,8 +31,7 @@ User feedback: measurements should **persist** when switching to other operation
 
 - Entering measure mode does **not** clear existing measurements.
 - First click on empty map: drops point A, starts rubber-band preview line + live distance label following the cursor.
-- Second click on empty map: drops point B, completes the measurement (point markers, dashed line, midpoint distance label). The new measurement joins the persistent collection. Rubber-band preview clears.
-- Third click on empty map: starts a new measurement (drops a new point A, etc.). Prior completed measurements remain visible.
+- Second click on empty map: drops point B, completes the measurement (point markers, dashed line, midpoint distance label). The new measurement joins the persistent collection. Rubber-band preview clears. **Measure mode auto-exits** — to add another measurement, the user re-clicks the Measure button.
 - Click on an existing measurement's point or label (while in measure mode): **deletes that measurement**. A click that hits a measurement feature is consumed by deletion and does **not** start a new measurement, even if a `_pending` first point exists.
 
 ### Measure mode (toggle off / switch to another mode)
@@ -85,7 +84,7 @@ Click flow inside measure mode:
 2. Else if `_pending == null`:
    - `_pending = { a: coord }`, attach mousemove for preview, render.
 3. Else (`_pending.a` is set):
-   - Push `{ id: newId(), a: _pending.a, b: coord }` into `_measurements`, set `_pending = null`, detach mousemove, render, update clear-button visibility.
+   - Push `{ id: newId(), a: _pending.a, b: coord }` into `_measurements`, then call `exitMeasureMode()` (which clears `_pending`, detaches mousemove, restores cursor/button), update clear-button visibility.
 
 ## Module API
 

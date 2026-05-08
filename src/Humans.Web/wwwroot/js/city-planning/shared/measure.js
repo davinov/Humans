@@ -133,11 +133,9 @@ function onMapClick(e) {
         return;
     }
 
-    // 3. Second click: complete measurement
+    // 3. Second click: complete measurement and exit measure mode
     _measurements.push({ id: newId(), a: _pending.a, b: coord });
-    _pending = null;
-    detachMouseMove();
-    renderMeasurements();
+    exitMeasureMode();
     updateClearBtn();
 }
 
