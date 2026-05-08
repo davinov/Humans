@@ -428,6 +428,9 @@ public class CityPlanningController : HumansControllerBase
         ImageUrl = c.ImageStoragePath,
         ImageFileName = c.ImageFileName,
         IsPlaced = c.LocationGeoJson is not null,
+        PlacementNotes = c.PlacementNotes,
+        PlacementImageUrl = c.PlacementImageStoragePath,
+        PlacementImageFileName = c.PlacementImageFileName,
     };
 
     [HttpPost("BarrioMap/Admin/Containers/{year}/Barrios/{seasonId}/Create")]
@@ -514,7 +517,8 @@ public class CityPlanningController : HumansControllerBase
             CampSeasonId: null,
             Year: container.Year,
             Name: model.Name,
-            Description: model.Description), cancellationToken);
+            Description: model.Description,
+            PlacementNotes: container.PlacementNotes), cancellationToken);
 
         SetSuccess("Container updated.");
         return RedirectToAction(nameof(Containers), new { year = container.Year });
@@ -564,7 +568,14 @@ public class CityPlanningController : HumansControllerBase
 
         try
         {
-            await _containerService.UploadImageAsync(id, file.OpenReadStream(), file.FileName, file.ContentType, file.Length, cancellationToken);
+            var upload = new ContainerImageUpload(file.OpenReadStream(), file.ContentType, file.FileName);
+            await _containerService.UpdateAsync(id, new ContainerData(
+                CampSeasonId: container.CampSeasonId,
+                Year: container.Year,
+                Name: container.Name,
+                Description: container.Description,
+                PlacementNotes: container.PlacementNotes,
+                MainImage: upload), cancellationToken);
             SetSuccess("Image uploaded.");
         }
         catch (InvalidOperationException ex)
@@ -591,7 +602,13 @@ public class CityPlanningController : HumansControllerBase
         if (container is null) return NotFound();
 
         var year = container.Year;
-        await _containerService.DeleteImageAsync(id, cancellationToken);
+        await _containerService.UpdateAsync(id, new ContainerData(
+            CampSeasonId: container.CampSeasonId,
+            Year: container.Year,
+            Name: container.Name,
+            Description: container.Description,
+            PlacementNotes: container.PlacementNotes,
+            RemoveMainImage: true), cancellationToken);
         SetSuccess("Image removed.");
         return RedirectToAction(nameof(Containers), new { year });
     }
