@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Humans.Application.Interfaces.Containers;
 using Microsoft.AspNetCore.Http;
 
 namespace Humans.Web.Models;
@@ -43,6 +44,21 @@ public class ContainerFormModel
     public IFormFile? PlacementImage { get; set; }
     public bool RemoveMainImage { get; set; }
     public bool RemovePlacementImage { get; set; }
+
+    public ContainerData ToContainerData(Guid? campSeasonId, int year) => new(
+        CampSeasonId: campSeasonId,
+        Year: year,
+        Name: Name,
+        Description: Description,
+        PlacementNotes: PlacementNotes,
+        MainImage: MainImage is { Length: > 0 }
+            ? new ContainerImageUpload(MainImage.OpenReadStream(), MainImage.ContentType, MainImage.FileName)
+            : null,
+        PlacementImage: PlacementImage is { Length: > 0 }
+            ? new ContainerImageUpload(PlacementImage.OpenReadStream(), PlacementImage.ContentType, PlacementImage.FileName)
+            : null,
+        RemoveMainImage: RemoveMainImage,
+        RemovePlacementImage: RemovePlacementImage);
 }
 
 public class OrgContainerIndexViewModel

@@ -130,24 +130,9 @@ public class ContainerController : HumansControllerBase
             return RedirectToAction(nameof(Index), new { slug, year });
         }
 
-        ContainerImageUpload? mainImage = null;
-        ContainerImageUpload? placementImage = null;
-
-        if (model.MainImage is { Length: > 0 })
-            mainImage = new ContainerImageUpload(model.MainImage.OpenReadStream(), model.MainImage.ContentType, model.MainImage.FileName);
-        if (model.PlacementImage is { Length: > 0 })
-            placementImage = new ContainerImageUpload(model.PlacementImage.OpenReadStream(), model.PlacementImage.ContentType, model.PlacementImage.FileName);
-
         try
         {
-            await _containerService.CreateAsync(new ContainerData(
-                CampSeasonId: season.Id,
-                Year: year,
-                Name: model.Name,
-                Description: model.Description,
-                PlacementNotes: model.PlacementNotes,
-                MainImage: mainImage,
-                PlacementImage: placementImage), ct);
+            await _containerService.CreateAsync(model.ToContainerData(season.Id, year), ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -181,26 +166,9 @@ public class ContainerController : HumansControllerBase
             return RedirectToAction(nameof(Index), new { slug, year });
         }
 
-        ContainerImageUpload? mainImage = null;
-        ContainerImageUpload? placementImage = null;
-
-        if (model.MainImage is { Length: > 0 })
-            mainImage = new ContainerImageUpload(model.MainImage.OpenReadStream(), model.MainImage.ContentType, model.MainImage.FileName);
-        if (model.PlacementImage is { Length: > 0 })
-            placementImage = new ContainerImageUpload(model.PlacementImage.OpenReadStream(), model.PlacementImage.ContentType, model.PlacementImage.FileName);
-
         try
         {
-            await _containerService.UpdateAsync(id, new ContainerData(
-                CampSeasonId: entity.CampSeasonId,
-                Year: entity.Year,
-                Name: model.Name,
-                Description: model.Description,
-                PlacementNotes: model.PlacementNotes,
-                MainImage: mainImage,
-                PlacementImage: placementImage,
-                RemoveMainImage: model.RemoveMainImage,
-                RemovePlacementImage: model.RemovePlacementImage), ct);
+            await _containerService.UpdateAsync(id, model.ToContainerData(entity.CampSeasonId, entity.Year), ct);
         }
         catch (InvalidOperationException ex)
         {

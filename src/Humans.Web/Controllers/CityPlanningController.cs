@@ -454,11 +454,15 @@ public class CityPlanningController : HumansControllerBase
             return RedirectToAction(nameof(Containers), new { year });
         }
 
-        await _containerService.CreateAsync(new ContainerData(
-            CampSeasonId: seasonId,
-            Year: year,
-            Name: model.Name,
-            Description: model.Description), cancellationToken);
+        try
+        {
+            await _containerService.CreateAsync(model.ToContainerData(seasonId, year), cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            SetError(ex.Message);
+            return RedirectToAction(nameof(Containers), new { year });
+        }
 
         SetSuccess("Container added.");
         return RedirectToAction(nameof(Containers), new { year });
@@ -482,11 +486,15 @@ public class CityPlanningController : HumansControllerBase
             return RedirectToAction(nameof(Containers), new { year });
         }
 
-        await _containerService.CreateAsync(new ContainerData(
-            CampSeasonId: null,
-            Year: year,
-            Name: model.Name,
-            Description: model.Description), cancellationToken);
+        try
+        {
+            await _containerService.CreateAsync(model.ToContainerData(null, year), cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            SetError(ex.Message);
+            return RedirectToAction(nameof(Containers), new { year });
+        }
 
         SetSuccess("Container added.");
         return RedirectToAction(nameof(Containers), new { year });
@@ -513,12 +521,15 @@ public class CityPlanningController : HumansControllerBase
             return RedirectToAction(nameof(Containers), new { year = container.Year });
         }
 
-        await _containerService.UpdateAsync(id, new ContainerData(
-            CampSeasonId: null,
-            Year: container.Year,
-            Name: model.Name,
-            Description: model.Description,
-            PlacementNotes: container.PlacementNotes), cancellationToken);
+        try
+        {
+            await _containerService.UpdateAsync(id, model.ToContainerData(container.CampSeasonId, container.Year), cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            SetError(ex.Message);
+            return RedirectToAction(nameof(Containers), new { year = container.Year });
+        }
 
         SetSuccess("Container updated.");
         return RedirectToAction(nameof(Containers), new { year = container.Year });
@@ -542,74 +553,6 @@ public class CityPlanningController : HumansControllerBase
         var year = container.Year;
         await _containerService.DeleteAsync(id, cancellationToken);
         SetSuccess("Container deleted.");
-        return RedirectToAction(nameof(Containers), new { year });
-    }
-
-    [HttpPost("BarrioMap/Admin/Containers/{id}/Image/Upload")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UploadOrgContainerImage(Guid id, IFormFile? file, CancellationToken cancellationToken)
-    {
-        var (error, user) = await RequireCurrentUserAsync();
-        if (error != null) return error;
-
-        if (!await IsMapAdminAsync(user.Id, cancellationToken))
-        {
-            return Forbid();
-        }
-
-        var container = await _containerService.GetByIdAsync(id, cancellationToken);
-        if (container is null) return NotFound();
-
-        if (file is null || file.Length == 0)
-        {
-            SetError("Please select a file to upload.");
-            return RedirectToAction(nameof(Containers), new { year = container.Year });
-        }
-
-        try
-        {
-            var upload = new ContainerImageUpload(file.OpenReadStream(), file.ContentType, file.FileName);
-            await _containerService.UpdateAsync(id, new ContainerData(
-                CampSeasonId: container.CampSeasonId,
-                Year: container.Year,
-                Name: container.Name,
-                Description: container.Description,
-                PlacementNotes: container.PlacementNotes,
-                MainImage: upload), cancellationToken);
-            SetSuccess("Image uploaded.");
-        }
-        catch (InvalidOperationException ex)
-        {
-            SetError(ex.Message);
-        }
-
-        return RedirectToAction(nameof(Containers), new { year = container.Year });
-    }
-
-    [HttpPost("BarrioMap/Admin/Containers/{id}/Image/Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteOrgContainerImage(Guid id, CancellationToken cancellationToken)
-    {
-        var (error, user) = await RequireCurrentUserAsync();
-        if (error != null) return error;
-
-        if (!await IsMapAdminAsync(user.Id, cancellationToken))
-        {
-            return Forbid();
-        }
-
-        var container = await _containerService.GetByIdAsync(id, cancellationToken);
-        if (container is null) return NotFound();
-
-        var year = container.Year;
-        await _containerService.UpdateAsync(id, new ContainerData(
-            CampSeasonId: container.CampSeasonId,
-            Year: container.Year,
-            Name: container.Name,
-            Description: container.Description,
-            PlacementNotes: container.PlacementNotes,
-            RemoveMainImage: true), cancellationToken);
-        SetSuccess("Image removed.");
         return RedirectToAction(nameof(Containers), new { year });
     }
 
