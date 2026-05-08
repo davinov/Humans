@@ -176,6 +176,12 @@ export function clearAllMeasurements() {
 
 export function initMeasure(map) {
     _map = map;
+
+    // Resolve design-system tokens at init so map paint stays in sync with the palette.
+    const styles = getComputedStyle(document.documentElement);
+    const inkColor   = styles.getPropertyValue('--h-aged-ink').trim()   || '#3d2b1f';
+    const haloColor  = styles.getPropertyValue('--h-warm-white').trim() || '#fefaf3';
+
     map.addSource('measure-points',       { type: 'geojson', data: EMPTY_FC });
     map.addSource('measure-line',         { type: 'geojson', data: EMPTY_FC });
     map.addSource('measure-preview-line', { type: 'geojson', data: EMPTY_FC });
@@ -183,23 +189,23 @@ export function initMeasure(map) {
 
     map.addLayer({
         id: 'measure-line', type: 'line', source: 'measure-line',
-        paint: { 'line-color': '#ff6600', 'line-width': 2, 'line-dasharray': [2, 2] },
+        paint: { 'line-color': inkColor, 'line-width': 2, 'line-dasharray': [2, 2] },
     });
     map.addLayer({
         id: 'measure-preview-line', type: 'line', source: 'measure-preview-line',
-        paint: { 'line-color': '#ff6600', 'line-width': 2, 'line-dasharray': [2, 2], 'line-opacity': 0.5 },
+        paint: { 'line-color': inkColor, 'line-width': 2, 'line-dasharray': [2, 2], 'line-opacity': 0.5 },
     });
     map.addLayer({
         id: 'measure-label', type: 'symbol', source: 'measure-label',
         layout: { 'text-field': ['get', 'label'], 'text-size': 13, 'text-anchor': 'center', 'text-allow-overlap': true },
-        paint: { 'text-color': '#000000', 'text-halo-color': '#ffffff', 'text-halo-width': 2 },
+        paint: { 'text-color': inkColor, 'text-halo-color': haloColor, 'text-halo-width': 2 },
     });
     map.addLayer({
         id: 'measure-points-stroke', type: 'circle', source: 'measure-points',
-        paint: { 'circle-radius': 10, 'circle-color': '#fff' },
+        paint: { 'circle-radius': 10, 'circle-color': haloColor },
     });
     map.addLayer({
         id: 'measure-points', type: 'circle', source: 'measure-points',
-        paint: { 'circle-radius': 7, 'circle-color': '#ff6600' },
+        paint: { 'circle-radius': 7, 'circle-color': inkColor },
     });
 }
