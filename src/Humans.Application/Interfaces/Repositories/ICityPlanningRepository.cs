@@ -77,6 +77,13 @@ public interface ICityPlanningRepository : IRepository
         Instant now,
         CancellationToken ct = default);
 
+    /// <summary>
+    /// Deletes the <see cref="CampPolygon"/> for the given camp season if one exists.
+    /// History rows are preserved (append-only invariant). Returns <c>true</c> if a
+    /// row was deleted, <c>false</c> if no polygon existed.
+    /// </summary>
+    Task<bool> DeletePolygonAsync(Guid campSeasonId, CancellationToken ct = default);
+
     // ==========================================================================
     // Reads / Writes — CityPlanningSettings
     // ==========================================================================

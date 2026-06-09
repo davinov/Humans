@@ -180,6 +180,10 @@ public sealed class CityPlanningService(
         }
     }
 
+    public Task<bool> DeleteCampPolygonAsync(
+        Guid campSeasonId, CancellationToken cancellationToken = default)
+        => repo.DeletePolygonAsync(campSeasonId, cancellationToken);
+
     public async Task<(CampPolygon polygon, CampPolygonHistory history)> RestoreCampPolygonVersionAsync(
         Guid campSeasonId, Guid historyId, Guid restoredByUserId,
         CancellationToken cancellationToken = default)

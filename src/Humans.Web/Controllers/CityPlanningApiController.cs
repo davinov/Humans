@@ -125,6 +125,37 @@ public class CityPlanningApiController(
         return Ok(new { campSeasonId, geoJson = polygon.GeoJson, areaSqm = polygon.AreaSqm });
     }
 
+    /// <summary>
+    /// Delete the polygon for a camp season.
+    /// Allowed for: camp lead of that season when placement is open, map admins (city planning team or camp admin).
+    /// History rows are preserved.
+    /// </summary>
+    [HttpDelete("camp-polygons/{campSeasonId:guid}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteCampPolygon(Guid campSeasonId, CancellationToken cancellationToken)
+    {
+        var userId = CurrentUserId();
+        if (!RoleChecks.IsCampAdmin(User) &&
+            !await cityPlanningService.CanUserEditAsync(userId, campSeasonId, cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var deleted = await cityPlanningService.DeleteCampPolygonAsync(campSeasonId, cancellationToken);
+        if (!deleted) return NotFound();
+
+        try
+        {
+            await hubContext.Clients.All.SendAsync("CampPolygonDeleted", campSeasonId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to broadcast CampPolygonDeleted for {CampSeasonId}", campSeasonId);
+        }
+
+        return NoContent();
+    }
+
     /// <summary>Restore a camp polygon to a historical version. Map admins only.</summary>
     [HttpPost("camp-polygons/{campSeasonId:guid}/restore/{historyId:guid}")]
     [ValidateAntiForgeryToken]

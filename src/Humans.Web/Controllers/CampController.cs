@@ -626,6 +626,7 @@ public class CampController(
         try
         {
             await _campService.WithdrawSeasonAsync(seasonId);
+            await cityPlanningService.DeleteCampPolygonAsync(seasonId);
             SetSuccess("Season withdrawn.");
         }
         catch (InvalidOperationException ex)

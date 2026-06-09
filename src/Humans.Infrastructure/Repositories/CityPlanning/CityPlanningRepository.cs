@@ -134,6 +134,19 @@ internal sealed class CityPlanningRepository(IDbContextFactory<HumansDbContext> 
         return (polygon, history);
     }
 
+    public async Task<bool> DeletePolygonAsync(Guid campSeasonId, CancellationToken ct = default)
+    {
+        await using var ctx = await factory.CreateDbContextAsync(ct);
+        var polygon = await ctx.CampPolygons
+            .FirstOrDefaultAsync(p => p.CampSeasonId == campSeasonId, ct);
+
+        if (polygon is null) return false;
+
+        ctx.CampPolygons.Remove(polygon);
+        await ctx.SaveChangesAsync(ct);
+        return true;
+    }
+
     // ==========================================================================
     // Reads / Writes — CityPlanningSettings
     // ==========================================================================
