@@ -19,6 +19,12 @@ public interface ICityPlanningService : IApplicationService
         Guid campSeasonId, string geoJson, double areaSqm, Guid modifiedByUserId,
         string note = "Saved", CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deletes the polygon for the given camp season. History rows are preserved.
+    /// Returns <c>true</c> if a polygon was deleted, <c>false</c> if none existed.
+    /// </summary>
+    Task<bool> DeleteCampPolygonAsync(Guid campSeasonId, CancellationToken cancellationToken = default);
+
     Task<(CampPolygon polygon, CampPolygonHistory history)> RestoreCampPolygonVersionAsync(
         Guid campSeasonId, Guid historyId, Guid restoredByUserId,
         CancellationToken cancellationToken = default);
